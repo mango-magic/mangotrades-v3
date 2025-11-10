@@ -15,7 +15,6 @@ requests==2.31.0
 openai==1.6.1
 google-generativeai==0.3.2
 python-dateutil==2.8.2
-# Force newer versions with Python 3.13 wheels
+# Force newer msgpack with Python 3.13 wheels (alpaca-trade-api requires websockets<11, so we can't override it)
 msgpack>=1.0.7
-websockets>=12.0
 
