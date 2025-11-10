@@ -1,11 +1,19 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
 from database import StockPrice, AISignal, SessionLocal
 from datetime import datetime, timedelta
 import yfinance as yf
 from config import Config
+
+# Try to import scikit-learn (optional - may not be available on Python 3.13)
+try:
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.preprocessing import StandardScaler
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    RandomForestClassifier = None
+    StandardScaler = None
 
 # Try to import Gemini API
 try:
@@ -20,8 +28,13 @@ except ImportError:
 
 class AIDecisionMaker:
     def __init__(self):
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
-        self.scaler = StandardScaler()
+        if SKLEARN_AVAILABLE:
+            self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+            self.scaler = StandardScaler()
+        else:
+            self.model = None
+            self.scaler = None
+            print("Warning: scikit-learn not available. Using technical indicators only.")
         self.is_trained = False
         self.use_gemini = GEMINI_AVAILABLE and Config.GEMINI_API_KEY
     

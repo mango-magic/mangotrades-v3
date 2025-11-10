@@ -11,7 +11,7 @@ python-dotenv==1.0.0
 schedule==1.2.0
 pytz==2023.3
 requests==2.31.0
-scikit-learn>=1.4.0
+# scikit-learn removed - optional, not compatible with Python 3.13. System works with technical indicators + Gemini AI
 openai==1.6.1
 google-generativeai==0.3.2
 python-dateutil==2.8.2
