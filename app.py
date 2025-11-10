@@ -1,3 +1,4 @@
+# MangoTrades V3 - Automated Trading System
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from database import init_db, get_db, StockPrice, Position, Trade, AISignal
@@ -246,6 +247,67 @@ def cancel_order(order_id):
     if success:
         return jsonify({'success': True, 'message': 'Order cancelled'})
     return jsonify({'error': 'Failed to cancel order'}), 500
+
+@app.route('/api/alpaca/positions', methods=['GET'])
+def get_alpaca_positions():
+    """Get actual positions from Alpaca (not database)"""
+    positions = alpaca_client.get_positions()
+    return jsonify(positions)
+
+@app.route('/api/strategy/history', methods=['GET'])
+def get_strategy_history():
+    """Get execution history from database"""
+    db = next(get_db())
+    try:
+        limit = request.args.get('limit', 100, type=int)
+        
+        # Get all trades ordered by timestamp
+        trades = db.query(Trade).order_by(Trade.timestamp.desc()).limit(limit).all()
+        
+        # Get closed positions
+        closed_positions = db.query(Position).filter_by(status='closed').order_by(Position.closed_at.desc()).limit(limit).all()
+        
+        # Get stop-loss orders
+        stop_loss_orders = db.query(Trade).filter_by(action='stop_loss').order_by(Trade.timestamp.desc()).limit(limit).all()
+        
+        return jsonify({
+            'trades': [t.to_dict() for t in trades],
+            'closed_positions': [p.to_dict() for p in closed_positions],
+            'stop_loss_orders': [s.to_dict() for s in stop_loss_orders],
+            'total_trades': len(trades),
+            'total_closed': len(closed_positions),
+            'total_stop_loss': len(stop_loss_orders)
+        })
+    finally:
+        db.close()
+
+@app.route('/api/strategy/test', methods=['POST'])
+def test_strategy():
+    """Test the strategy without making purchases - returns detailed results"""
+    try:
+        # Run analysis only (no purchases)
+        qualifying_stocks, all_results = momentum_strategy.analyze_all_stocks()
+        
+        # Get current Alpaca positions
+        current_positions = alpaca_client.get_positions()
+        
+        # Get account info
+        account = alpaca_client.get_account()
+        
+        return jsonify({
+            'success': True,
+            'test_mode': True,
+            'current_positions_count': len(current_positions),
+            'current_positions': current_positions,
+            'account_buying_power': account.get('buying_power', 0) if account else 0,
+            'total_analyzed': len(all_results),
+            'qualifying_count': len(qualifying_stocks),
+            'qualifying_stocks': qualifying_stocks[:50],
+            'all_results': all_results[:100],
+            'message': 'Test completed - no purchases made'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'success': False}), 500
 
 @app.route('/')
 def index():
