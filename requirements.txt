@@ -15,4 +15,7 @@ requests==2.31.0
 openai==1.6.1
 google-generativeai==0.3.2
 python-dateutil==2.8.2
+# Force newer versions with Python 3.13 wheels
+msgpack>=1.0.7
+websockets>=12.0
 
