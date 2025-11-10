@@ -15,5 +15,7 @@ requests==2.31.0
 openai==1.6.1
 google-generativeai==0.3.2
 python-dateutil==2.8.2
+# Pin aiohttp to version with pre-built wheels for Python 3.11 (avoids build issues)
+aiohttp>=3.9.0,<4.0.0
 # Note: alpaca-trade-api 3.0.0 requires msgpack==1.0.3 and websockets<11,>=9.0 - don't override these
 
