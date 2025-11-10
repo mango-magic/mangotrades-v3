@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MangoTrades V3 - Trading Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-card .change {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .trade-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        input, select {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .signal-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .signal-buy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .signal-sell {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .signal-hold {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .trade-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🥭 MangoTrades V3 - Trading Dashboard</h1>
+            <p>30-Minute Momentum Strategy - Automated Stock Trading</p>
+            <div style="margin-top: 15px;">
+                <button class="btn btn-success" onclick="executeStrategy()" style="margin-right: 10px;">🚀 Execute Strategy</button>
+                <button class="btn btn-secondary" onclick="analyzeStocks()">📊 Analyze Stocks (No Purchase)</button>
+            </div>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Portfolio Value</h3>
+                <div class="value" id="portfolio-value">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Buying Power</h3>
+                <div class="value" id="buying-power">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Open Positions</h3>
+                <div class="value" id="positions-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Unrealized P&L</h3>
+                <div class="value" id="unrealized-pnl">$0.00</div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h2>📊 Open Positions</h2>
+                <div id="positions-container">
+                    <div class="loading">Loading positions...</div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>💹 Place Trade</h2>
+                <form id="trade-form">
+                    <div class="trade-form">
+                        <div class="form-group">
+                            <label>Ticker</label>
+                            <input type="text" id="ticker" placeholder="AAPL" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="quantity" placeholder="10" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Side</label>
+                            <select id="side" required>
+                                <option value="buy">Buy</option>
+                                <option value="sell">Sell</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Order Type</label>
+                            <select id="order-type" required>
+                                <option value="market">Market</option>
+                                <option value="limit">Limit</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="limit-price-group" style="display: none;">
+                            <label>Limit Price</label>
+                            <input type="number" id="limit-price" step="0.01" placeholder="150.00">
+                        </div>
+                        <div class="form-group full-width">
+                            <button type="submit" class="btn btn-primary">Place Order</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="trade-message"></div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h2>🤖 AI Trading Signals</h2>
+                <button class="btn btn-secondary" onclick="generateSignals()" style="margin-bottom: 15px;">Generate Signals</button>
+                <div id="signals-container">
+                    <div class="loading">Loading signals...</div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>📈 Stock Prices</h2>
+                <button class="btn btn-secondary" onclick="checkStocks()" style="margin-bottom: 15px;">Check All Stocks</button>
+                <div id="prices-container">
+                    <div class="loading">Loading prices...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h2>📋 Recent Trades</h2>
+            <div id="trades-container">
+                <div class="loading">Loading trades...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        // Update order type change
+        document.getElementById('order-type').addEventListener('change', function() {
+            const limitPriceGroup = document.getElementById('limit-price-group');
+            if (this.value === 'limit') {
+                limitPriceGroup.style.display = 'block';
+                document.getElementById('limit-price').required = true;
+            } else {
+                limitPriceGroup.style.display = 'none';
+                document.getElementById('limit-price').required = false;
+            }
+        });
+        
+        // Trade form submission
+        document.getElementById('trade-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const ticker = document.getElementById('ticker').value.toUpperCase();
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const side = document.getElementById('side').value;
+            const orderType = document.getElementById('order-type').value;
+            const limitPrice = document.getElementById('limit-price').value;
+            
+            const messageDiv = document.getElementById('trade-message');
+            messageDiv.innerHTML = '<div class="loading">Placing order...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/trades`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticker,
+                        quantity,
+                        side,
+                        order_type: orderType,
+                        limit_price: orderType === 'limit' ? parseFloat(limitPrice) : null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = `<div class="success">Order placed successfully! Order ID: ${data.id}</div>`;
+                    document.getElementById('trade-form').reset();
+                    loadPortfolioSummary();
+                    loadPositions();
+                    loadTrades();
+                } else {
+                    messageDiv.innerHTML = `<div class="error">Error: ${data.error || 'Failed to place order'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+        
+        async function loadPortfolioSummary() {
+            try {
+                const response = await fetch(`${API_BASE}/portfolio/summary`);
+                const data = await response.json();
+                
+                document.getElementById('portfolio-value').textContent = 
+                    `$${data.account?.portfolio_value?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`;
+                document.getElementById('buying-power').textContent = 
+                    `$${data.account?.buying_power?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`;
+                document.getElementById('positions-count').textContent = data.positions_count || 0;
+                
+                const pnl = data.total_unrealized_pnl || 0;
+                const pnlElement = document.getElementById('unrealized-pnl');
+                pnlElement.textContent = `$${pnl.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                pnlElement.className = pnl >= 0 ? 'value positive' : 'value negative';
+            } catch (error) {
+                console.error('Error loading portfolio summary:', error);
+            }
+        }
+        
+        async function loadPositions() {
+            try {
+                const response = await fetch(`${API_BASE}/positions`);
+                const positions = await response.json();
+                
+                const container = document.getElementById('positions-container');
+                
+                if (positions.length === 0) {
+                    container.innerHTML = '<p>No open positions</p>';
+                    return;
+                }
+                
+                let html = '<table><thead><tr><th>Ticker</th><th>Quantity</th><th>Entry Price</th><th>Current Price</th><th>P&L</th><th>Type</th></tr></thead><tbody>';
+                
+                positions.forEach(pos => {
+                    const pnl = pos.unrealized_pnl || 0;
+                    html += `<tr>
+                        <td><strong>${pos.ticker}</strong></td>
+                        <td>${pos.quantity}</td>
+                        <td>$${pos.entry_price?.toFixed(2)}</td>
+                        <td>$${pos.current_price?.toFixed(2) || 'N/A'}</td>
+                        <td class="${pnl >= 0 ? 'positive' : 'negative'}">$${pnl.toFixed(2)}</td>
+                        <td>${pos.position_type}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('positions-container').innerHTML = 
+                    `<div class="error">Error loading positions: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadSignals() {
+            try {
+                const response = await fetch(`${API_BASE}/ai/signals?limit=20`);
+                const signals = await response.json();
+                
+                const container = document.getElementById('signals-container');
+                
+                if (signals.length === 0) {
+                    container.innerHTML = '<p>No signals available</p>';
+                    return;
+                }
+                
+                let html = '<table><thead><tr><th>Ticker</th><th>Signal</th><th>Confidence</th><th>Reasoning</th><th>Time</th></tr></thead><tbody>';
+                
+                signals.forEach(signal => {
+                    html += `<tr>
+                        <td><strong>${signal.ticker}</strong></td>
+                        <td><span class="signal-badge signal-${signal.signal_type}">${signal.signal_type.toUpperCase()}</span></td>
+                        <td>${(signal.confidence * 100).toFixed(1)}%</td>
+                        <td>${signal.reasoning || 'N/A'}</td>
+                        <td>${new Date(signal.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('signals-container').innerHTML = 
+                    `<div class="error">Error loading signals: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadPrices() {
+            try {
+                const response = await fetch(`${API_BASE}/stocks/prices?limit=20`);
+                const prices = await response.json();
+                
+                const container = document.getElementById('prices-container');
+                
+                if (prices.length === 0) {
+                    container.innerHTML = '<p>No prices available</p>';
+                    return;
+                }
+                
+                let html = '<table><thead><tr><th>Ticker</th><th>Price</th><th>Change</th><th>Change %</th><th>Volume</th><th>Time</th></tr></thead><tbody>';
+                
+                prices.forEach(price => {
+                    const change = price.change || 0;
+                    const changePercent = price.change_percent || 0;
+                    html += `<tr>
+                        <td><strong>${price.ticker}</strong></td>
+                        <td>$${price.price?.toFixed(2)}</td>
+                        <td class="${change >= 0 ? 'positive' : 'negative'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}</td>
+                        <td class="${changePercent >= 0 ? 'positive' : 'negative'}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+                        <td>${price.volume?.toLocaleString() || 'N/A'}</td>
+                        <td>${new Date(price.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('prices-container').innerHTML = 
+                    `<div class="error">Error loading prices: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadTrades() {
+            try {
+                const response = await fetch(`${API_BASE}/trades?limit=20`);
+                const trades = await response.json();
+                
+                const container = document.getElementById('trades-container');
+                
+                if (trades.length === 0) {
+                    container.innerHTML = '<p>No trades available</p>';
+                    return;
+                }
+                
+                let html = '<table><thead><tr><th>Ticker</th><th>Action</th><th>Quantity</th><th>Price</th><th>Time</th></tr></thead><tbody>';
+                
+                trades.forEach(trade => {
+                    html += `<tr>
+                        <td><strong>${trade.ticker}</strong></td>
+                        <td><span class="signal-badge signal-${trade.action}">${trade.action.toUpperCase()}</span></td>
+                        <td>${trade.quantity}</td>
+                        <td>$${trade.price?.toFixed(2)}</td>
+                        <td>${new Date(trade.timestamp).toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                document.getElementById('trades-container').innerHTML = 
+                    `<div class="error">Error loading trades: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkStocks() {
+            const container = document.getElementById('prices-container');
+            container.innerHTML = '<div class="loading">Checking stocks...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/stocks/check`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    container.innerHTML = `<div class="success">${data.message}</div>`;
+                    setTimeout(loadPrices, 2000);
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function generateSignals() {
+            const container = document.getElementById('signals-container');
+            container.innerHTML = '<div class="loading">Generating signals...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai/signals/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ limit: 20 })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    container.innerHTML = `<div class="success">Generated ${data.count} signals</div>`;
+                    setTimeout(loadSignals, 2000);
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function executeStrategy() {
+            if (!confirm('Execute the 30-minute momentum strategy? This will purchase qualifying stocks and set stop-loss orders.')) {
+                return;
+            }
+            
+            const messageDiv = document.getElementById('trade-message') || document.body;
+            const msg = document.createElement('div');
+            msg.className = 'loading';
+            msg.textContent = 'Executing strategy... This may take several minutes.';
+            messageDiv.appendChild(msg);
+            
+            try {
+                const response = await fetch(`${API_BASE}/strategy/execute`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                msg.remove();
+                const resultDiv = document.createElement('div');
+                resultDiv.className = data.success ? 'success' : 'error';
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <strong>Strategy Executed Successfully!</strong><br>
+                        Qualifying Stocks: ${data.qualifying_count}<br>
+                        Stocks Purchased: ${data.purchased_count}<br>
+                        Total Invested: $${data.total_invested?.toLocaleString('en-US', {minimumFractionDigits: 2}) || '0.00'}<br>
+                        <small>Check positions below for details</small>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<strong>Error:</strong> ${data.error || data.message || 'Strategy execution failed'}`;
+                }
+                
+                messageDiv.appendChild(resultDiv);
+                
+                // Refresh portfolio and positions
+                setTimeout(() => {
+                    loadPortfolioSummary();
+                    loadPositions();
+                    loadTrades();
+                }, 2000);
+            } catch (error) {
+                msg.remove();
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                messageDiv.appendChild(errorDiv);
+            }
+        }
+        
+        async function analyzeStocks() {
+            const messageDiv = document.getElementById('trade-message') || document.body;
+            const msg = document.createElement('div');
+            msg.className = 'loading';
+            msg.textContent = 'Analyzing stocks... This may take several minutes.';
+            messageDiv.appendChild(msg);
+            
+            try {
+                const response = await fetch(`${API_BASE}/strategy/analyze`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                msg.remove();
+                const resultDiv = document.createElement('div');
+                resultDiv.className = data.success ? 'success' : 'error';
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <strong>Analysis Complete!</strong><br>
+                        Total Analyzed: ${data.total_analyzed}<br>
+                        Qualifying Stocks (>2% gain): ${data.qualifying_count}<br>
+                        <small>These stocks would be purchased if strategy is executed</small>
+                    `;
+                    
+                    if (data.qualifying_stocks && data.qualifying_stocks.length > 0) {
+                        const listDiv = document.createElement('div');
+                        listDiv.style.marginTop = '10px';
+                        listDiv.style.maxHeight = '200px';
+                        listDiv.style.overflowY = 'auto';
+                        listDiv.innerHTML = '<strong>Qualifying Stocks:</strong><ul style="margin-top: 5px;">' +
+                            data.qualifying_stocks.slice(0, 20).map(s => 
+                                `<li>${s.ticker}: ${s.change_percent.toFixed(2)}% gain ($${s.open_price.toFixed(2)} → $${s.current_price.toFixed(2)})</li>`
+                            ).join('') + '</ul>';
+                        resultDiv.appendChild(listDiv);
+                    }
+                } else {
+                    resultDiv.innerHTML = `<strong>Error:</strong> ${data.error || 'Analysis failed'}`;
+                }
+                
+                messageDiv.appendChild(resultDiv);
+            } catch (error) {
+                msg.remove();
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                messageDiv.appendChild(errorDiv);
+            }
+        }
+        
+        // Load initial data
+        loadPortfolioSummary();
+        loadPositions();
+        loadSignals();
+        loadPrices();
+        loadTrades();
+        
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            loadPortfolioSummary();
+            loadPositions();
+            loadTrades();
+        }, 30000);
+    </script>
+</body>
+</html>
+
